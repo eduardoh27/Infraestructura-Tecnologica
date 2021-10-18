@@ -1,21 +1,22 @@
 #include <stdio.h>
 
-int main() {
+int main(int argc, char **argv) {
     float ancho;
-    printf("Digite el valor del ancho: ");
+    printf("Digite el valor del ancho del bus: ");
     scanf("%f", &ancho);
     
-    float dpc;
-    printf("Digite el número de datos por ciclo: ");
-    scanf("%f", &dpc);
+    float bpc;
+    printf("Digite el numero de bits por ciclo: ");
+    scanf("%f", &bpc);
     
     float frec;
-    printf("Digite la frecuencia vibracional: ");
+    printf("Digite la frecuencia en MHz: ");
     scanf("%f", &frec);
     
-    float v = ancho * dpc * frec ;
+    float velocidad = (ancho * bpc * frec)/8; 
     
-    printf("La velocidad de transferencia es %.1f",v);
+    printf("La velocidad de transferencia es %.1f", velocidad);
+    printf(" MB/s");
     
     return 0;
 }
