@@ -1,7 +1,7 @@
-
-/* TP4
-Código que crea un vector con un tamaño el cual se indica y con valores que igualmente se indican. 
-Al final del código se encuentra documentado lo que se usó como guía, este fue el código de Ana Sofía Padilla Daza - 202021748, integrante de nuestro grupo
+/* TP5
+En este caso se implementa por medio de corrimientos de ebp, las variables las manejamos como parametros.
+Codigo que crea un vector con un tamaño el cual se indica y con valores que igualmente se indican. 
+Al final del codigo se encuentra documentado lo que se uso como guia, este fue el codigo de Ana Sofía Padilla Daza - 202021748, integrante de nuestro grupo
 Alejandro Salgado Manrique - 201923134
 a.salgadom@uniandes.edu.co
 Ana Sofía Padilla Daza - 202021748
@@ -13,36 +13,30 @@ ej.herreraa@uniandes.edu.co
 
 #include <stdio.h>
 
-void empaquetamiento (int, int*);
+void empaquetamiento (int, int*, char*, char*, char*, int, int, int, char*);
 
+char hexnum[8];
+    
 int main(){    
 
-    int size, i;
-    int *vector;
+    int tamanio, i;
+    int *a;
     
     printf("Indique el tamanio del vector: ");
-    scanf("%d", &size);
+    scanf("%d", &tamanio);
 
-    vector = (int*) calloc (size, sizeof(int));
+    a = (int*) calloc (tamanio, sizeof(int));
 
-    if (size > 0) {
-         for (i=0; i<size; ++i) {
+    if (tamanio > 0) {
+         for (i=0; i<tamanio; ++i) {
              printf("Indique el elemento: ");
-             scanf("%d", &vector[i]);
+             scanf("%d", &a[i]);
          }
 
     }
     else {
-        printf("Escribio un valor no valido");
+        printf("Escribio un valor no válido");
     }
-
-    empaquetamiento(size, vector);
-    return 0;
-
-}
-
-
-void empaquetamiento (int tamanio, int *vector) {
 
     //Formatos de salida para el print. Estos son preestablecidos 
     char *saltoLinea = "\n";
@@ -55,11 +49,60 @@ void empaquetamiento (int tamanio, int *vector) {
     int j2;
 
     //Vector que guarda los valores en hexa de los numeros (En el codigo dentro de un for, sin embargo toco crear el vector por afuera y se modifica por adentro)
-    char hexnum[8];
+    char *pHexnum = &hexnum;
+
+
+
+    //empaquetamiento(size, a); LLamado a la funcion empaquetamiento
+    __asm{
+
+        //Push del apuntador de hexnum
+        push pHexnum
+        //Push de j2
+        push j2
+        //Push de j
+        push j
+        //Push de la posicion del vector 
+        push posVector
+        //Push del formato del numero en hexa
+        push hexa
+        //Push del formato del vector
+        push formVector
+        //Push del formato de salto de linea
+        push saltoLinea
+        //Push del parametro a
+        push a
+        //Push del parametro size
+        push tamanio
+        //Llamado de la funcion empaquetamiento
+        call empaquetamiento
+
+    }
+
+
+
+    return 0;
+
+}
+
+
+void empaquetamiento (int tamanio, int *a, char *saltoLinea, char *formVector, char *hexa, int posVector, int j, int j2, char *pHexnum) {
+
+    /*
+    Tamanio es ebp+8
+    a es ebp+12
+    saltoLinea es ebp+16
+    formVector es ebp+20
+    hexa es ebp+24
+    posVector es ebp+28
+    j es ebp+32
+    j2 es ebp+36
+    pHexnum es ebp+40
+    */
 
 
     __asm{
-        
+
         //Variable que guarda la posicion de valores ingresados al vector int i=0
         mov ebx, 0 
         
@@ -67,7 +110,7 @@ void empaquetamiento (int tamanio, int *vector) {
         forVector:
         
         //Comparacion i<size. 
-        cmp ebx, tamanio
+        cmp ebx, [ebp+8]
         jge finForVector    
                 
             //char hexnum[8]; Se inicializa por afuera
@@ -83,14 +126,15 @@ void empaquetamiento (int tamanio, int *vector) {
             jge finForNumero
             
                 //Guarda variable por si se modifica ecx
-                mov j2, ecx
+                //mov j2, ecx
+                mov [ebp+36], ecx
 
                 /*int hexunit = ((a[i] >> (j*4)) & 15)*/
 
                 //a[i]
                 //Aca ponemos el vector dentro de edi y luego accedemos a cada uno de los enteros al llamar al contenido del registro sumandole el valor de ebx*4,
                 //esto con el fin de obtener el entero en cada posicion (cada 4 posiciones)
-                mov edi, vector
+                mov edi, [ebp+12]
                 mov esi, [edi+ebx*4]
 
                 //Inicializacion para el recorrido del corrimiento
@@ -264,30 +308,40 @@ void empaquetamiento (int tamanio, int *vector) {
                     fin:
                     
                     //Esto lo hacemos para hacer el hexnum[7-j], donde ecx es 7-j
-                    mov j, ecx 
+                    //mov j, ecx
+                    mov [ebp+32], ecx 
                     mov ecx, 7
-                    sub ecx, j 
+                    //sub ecx, j
+                    sub ecx, [ebp+32]
 
                     //hexnum[7-j] = hexaConversor(hexunit)
-                    mov hexnum[ecx], al 
+                    //mov hexnum[ecx], al 
+                    mov edx, [ebp+40]
+                    mov [edx+ecx], al 
                 
                 //Aca devuelve el valor del for original a ecx, leugo suma su valor y repite el proceso del for
-                mov ecx, j2
+                mov ecx, [ebp+36]
                 inc ecx
                 jmp forNumero
 
             finForNumero:
                 
             
+            mov edi, edx
+
+            
+            
+            
             //printf("v[%d] = ", i);
-            mov posVector, ebx
+            mov [ebp+28], ebx
             push ebx
-            push formVector
+            push [ebp+20]
             call printf
             add esp, 8
-            mov ebx, posVector
+            mov ebx, [ebp+28]
 
-
+                
+            
             //Variable que guarda la posicion de valores en caracter del numero j=0
             mov ecx, 0 
         
@@ -298,21 +352,24 @@ void empaquetamiento (int tamanio, int *vector) {
             cmp ecx, 8
             jge finForPrint
         
-                mov j2, ecx
+                mov [ebp+36], ecx
 
                 /*printf("0x%c%c", hexnum[j], hexnum[j+1]);*/
                 mov al, 0 
-                movzx edi, hexnum[ecx]
-                movzx esi, hexnum[ecx+1]
-                push esi
-                push edi
-                push hexa
+
+                //movzx edi, hexnum[ecx]
+                //movzx esi, hexnum[ecx+1]
+                //En esta parte del codigo hacemos el push de los valores 
+                //de hexnum
+                push [edi+ecx+1]
+                push [edi+ecx]
+                push [ebp+24]
                 call printf
                 add esp, 12
 
 
                 //j+=2
-                mov ecx, j2
+                mov ecx, [ebp+36]
                 add ecx, 2
                 jmp forPrint 
 
@@ -320,7 +377,8 @@ void empaquetamiento (int tamanio, int *vector) {
             finForPrint:
           
 
-            push saltoLinea
+            //Salto de linea 
+            push [ebp+16]
             call printf 
             add esp, 4
 
@@ -330,78 +388,8 @@ void empaquetamiento (int tamanio, int *vector) {
 
         finForVector: 
         
-        
-        
     }
 
 
 
 }
-
-
-
-
-
-
-/*
-Código TP3 de Ana Sofía Padilla Daza
-
-
-char hexaConversor(int numb){
-    char final;
-
-    if (numb >= 10) {
-        if (numb == 10) {
-            final = 'A';}
-        else if (numb == 11){
-            final = 'B';}
-        else if (numb == 12){
-            final = 'C';}
-        else if (numb == 13){
-            final = 'D';}
-        else if (numb == 14){
-            final = 'E';}
-        else if (numb == 15){
-            final = 'F';}
-    }
-    else if (numb < 10) {
-        final = numb + '0';
-    }
-    else{
-        printf("Se ingresó un valor no válido");
-    }
-
- return final;
-}
-
-
-void empaquetamiento(int *a, int size){  // convierte los numeros en el arreglo *a a hexadecimal
-    for (int i = 0; i < size; i++) { // este for itera a traves del arreglo
-        char hexnum[8]; // crea un arreglo de caracteres de tamaño 8 porque esa es la cantidad de digitos en hexa necesarios para representar un int (8 bytes/32 bits)
-        
-        for(int j = 0; j < 8; j++){ // este for itera 8 veces para poder obtener los 8 digitos de hexa que representan el int ( un hexa representa 4 bits) 
-        	int hexunit = ((a[i] >> (j*4)) & 15); // hace que el hexunit quede con solo los  4 bits del numero que se necesitan para convertir el número
-        	                                      //Se corre el numero 4 bits a la derecha por cada iteracion. Esto borra los bits que ya han sido procesados 
-                                                  //y trae los 4 bits siguientes al frente. Luego al hacerle & 15 (pues 15 en bits es 1111) se extraen unicamente los 4 bits menos significativos 
-                                                  //asi se eliminan todos los demas. ej. (en 8 bits) A[i] = 234 = 11101010. 
-                                                  //Entonces cuando j=0, a[i] >> 0*4 = a[i] >> 0 = 11101010, luego se hace 11101010 & 00001111 = 00001010 = 10 = 'A'. 
-                                                  //Cuando j=1 a[i] >>1*4 = a[i] >> 4 = 00001110, luego 00001110 & 00001111 = 00001110 = 14 = 'E'
-            hexnum[7-j] = hexaConversor(hexunit);// se convierte el hexunit a hexadecimal yse agrega al final del arreglo de caracteres para que quede en el orden corracto (por eso es 7-j)
-        }
-        
-        printf("v[%d] = ", i);
-        
-        for(int j = 0; j < 8; j+=2){  // se itera a traves del arreglo otra vez y si imprime cada pareja del hexa
-        	printf("0x%c%c ", hexnum[j], hexnum[j+1]);
-        }
-    }
-
-
-    return;
-}
-*/
-
-
-
-
-  
